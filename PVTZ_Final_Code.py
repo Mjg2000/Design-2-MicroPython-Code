@@ -33,12 +33,13 @@ from machine import ADC,Pin,PWM, Timer
 from time import sleep
 from utime import sleep_ms
 import time
-
 import math
 import esp
 import sys
 import _thread
+import ujson
 from pid_controller import pid
+
 
 
 #----------------------------------General Initialization----------------------------------
@@ -159,7 +160,14 @@ def capture_data(timer):
     Temp_List.append(PT100_Current_Temp)
     time_list.append(total_time)
     
-
+# Function to save data to a text file
+def save_data_to_file(filename, time_data, temp_data):
+    data = {"Time": time_data,"Temperature": temp_data}
+    with open(filename, 'w') as file:
+        ujson.dump(data, file)
+    
+# File name to save data
+file_name = "data.txt"
 
 
 #----------------------------------User Input----------------------------------
@@ -233,14 +241,9 @@ else:
                 X_PIN = Pin(15,Pin.OUT)
                 X_PIN.off()
                 Fan.off()
-                filename = "captured_data.csv"
-                x = open(filename, "w")
-                x.write("Temperature,Time\n")  # Write header
-                for Temperature,Time in zip(Temp_List,time_list):
-                    x.write(str(Temperature)+","+str(Time)+'\n')
-                x.close()
-                        
-                print("Data written to", filename)
+                save_data_to_file(file_name, time_list, Temp_List)
+                print("Data saved to", file_name)
+
                 break
             
         #Show user current temperature
@@ -258,7 +261,7 @@ else:
             X_PIN.off()
             Peltier_PWM_Y = PWM(Pin(2),f_peltier,duty = 700)
             Fan.on()
-            timer.init(period=5000,mode=Timer.ONE_SHOT)
+            #timer.init(period=5000,mode=Timer.ONE_SHOT)
             #sleep_ms(10)
             
         #If PID error is less than -5 set duty cycle of PWM higher
